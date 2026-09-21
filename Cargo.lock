@@ -887,7 +887,7 @@ dependencies = [
 
 [[package]]
 name = "pool-factory"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "rand 0.7.3",
  "soroban-sdk",

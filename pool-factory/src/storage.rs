@@ -31,6 +31,24 @@ pub fn extend_instance(e: &Env) {
         .extend_ttl(LEDGER_THRESHOLD_INSTANCE, LEDGER_BUMP_INSTANCE);
 }
 
+/// Fetch the owner of the pool factory
+pub fn get_owner(e: &Env) -> Address {
+    e.storage()
+        .instance()
+        .get::<Symbol, Address>(&Symbol::new(e, "Owner"))
+        .unwrap_optimized()
+}
+
+/// Set the owner of the pool factory
+///
+/// ### Arguments
+/// * `owner` - The address that can upgrade the pool factory
+pub fn set_owner(e: &Env, owner: &Address) {
+    e.storage()
+        .instance()
+        .set::<Symbol, Address>(&Symbol::new(e, "Owner"), owner)
+}
+
 /// Fetch the pool initialization metadata
 pub fn get_pool_init_meta(e: &Env) -> PoolInitMeta {
     e.storage()

@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env};
+use soroban_sdk::{testutils::Address as _, Address, Env};
 
 mod pool_factory_contract {
     soroban_sdk::contractimport!(
@@ -16,7 +16,12 @@ pub fn create_pool_factory<'a>(
     pool_init_meta: PoolInitMeta,
 ) -> PoolFactoryClient<'a> {
     if wasm {
-        e.register_at(&contract_id, pool_factory_contract::WASM, (pool_init_meta,));
+        let owner = Address::generate(e);
+        e.register_at(
+            &contract_id,
+            pool_factory_contract::WASM,
+            (owner, pool_init_meta),
+        );
     } else {
         e.register_at(&contract_id, MockPoolFactory {}, (pool_init_meta,));
     }

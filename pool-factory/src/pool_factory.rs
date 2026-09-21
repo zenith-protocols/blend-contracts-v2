@@ -43,6 +43,15 @@ pub trait PoolFactory {
     /// ### Arguments
     /// * `pool_id` - The contract address to be checked
     fn is_pool(e: Env, pool_id: Address) -> bool;
+
+    /// Fetch the owner of the pool factory
+    fn owner(e: Env) -> Address;
+
+    /// (Owner only) Upgrade the pool factory to a new WASM
+    ///
+    /// ### Arguments
+    /// * `new_wasm_hash` - The hash of the new WASM
+    fn upgrade(e: Env, new_wasm_hash: BytesN<32>);
 }
 
 #[contractimpl]
@@ -50,8 +59,10 @@ impl PoolFactoryContract {
     /// Construct the pool factory contract
     ///
     /// ### Arguments
-    /// * `pool_init_meta` - The pool initialization metadata    
-    pub fn __constructor(e: Env, pool_init_meta: PoolInitMeta) {
+    /// * `owner` - The address that can upgrade the pool factory
+    /// * `pool_init_meta` - The pool initialization metadata
+    pub fn __constructor(e: Env, owner: Address, pool_init_meta: PoolInitMeta) {
+        storage::set_owner(&e, &owner);
         storage::set_pool_init_meta(&e, &pool_init_meta);
     }
 }
@@ -118,5 +129,17 @@ impl PoolFactory for PoolFactoryContract {
     fn is_pool(e: Env, pool_address: Address) -> bool {
         storage::extend_instance(&e);
         storage::is_deployed(&e, &pool_address)
+    }
+
+    fn owner(e: Env) -> Address {
+        storage::extend_instance(&e);
+        storage::get_owner(&e)
+    }
+
+    fn upgrade(e: Env, new_wasm_hash: BytesN<32>) {
+        storage::extend_instance(&e);
+        storage::get_owner(&e).require_auth();
+
+        e.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
