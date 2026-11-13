@@ -2,10 +2,7 @@ use crate::{
     storage::{self, PoolInitMeta},
     PoolFactoryError,
 };
-use soroban_sdk::{
-    contract, contractimpl, panic_with_error, testutils::Address as _, Address, BytesN, Env,
-    String, Symbol,
-};
+use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Symbol};
 
 use pool::PoolContract;
 
@@ -65,7 +62,7 @@ impl MockPoolFactoryTrait for MockPoolFactory {
         e: Env,
         admin: Address,
         name: String,
-        _salt: BytesN<32>,
+        salt: BytesN<32>,
         oracle: Address,
         backstop_take_rate: u32,
         max_positions: u32,
@@ -80,7 +77,7 @@ impl MockPoolFactoryTrait for MockPoolFactory {
             panic_with_error!(&e, PoolFactoryError::InvalidPoolInitArgs);
         }
 
-        let pool_address = Address::generate(&e);
+        let pool_address = e.deployer().with_current_contract(salt).deployed_address();
         e.register_at(
             &pool_address,
             PoolContract {},
