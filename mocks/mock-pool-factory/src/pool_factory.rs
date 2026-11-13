@@ -2,9 +2,16 @@ use crate::{
     storage::{self, PoolInitMeta},
     PoolFactoryError,
 };
-use soroban_sdk::{contract, contractimpl, panic_with_error, Address, BytesN, Env, String, Symbol};
+use soroban_sdk::{
+    contract, contractevent, contractimpl, panic_with_error, Address, BytesN, Env, String,
+};
 
 use pool::PoolContract;
+
+#[contractevent(topics = ["deploy"], data_format = "single-value")]
+struct Deploy {
+    pool_address: Address,
+}
 
 #[contract]
 pub struct MockPoolFactory;
@@ -95,8 +102,10 @@ impl MockPoolFactoryTrait for MockPoolFactory {
 
         storage::set_deployed(&e, &pool_address);
 
-        e.events()
-            .publish((Symbol::new(&e, "deploy"),), pool_address.clone());
+        Deploy {
+            pool_address: pool_address.clone(),
+        }
+        .publish(&e);
         pool_address
     }
 

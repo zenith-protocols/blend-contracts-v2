@@ -1,4 +1,91 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{contractevent, Address, Env};
+
+#[contractevent(topics = ["deposit"], data_format = "vec")]
+struct Deposit {
+    #[topic]
+    pool_address: Address,
+    #[topic]
+    from: Address,
+    tokens_in: i128,
+    backstop_shares_minted: i128,
+}
+
+#[contractevent(topics = ["queue_withdrawal"], data_format = "vec")]
+struct QueueWithdrawal {
+    #[topic]
+    pool_address: Address,
+    #[topic]
+    from: Address,
+    amount: i128,
+    expiration: u64,
+}
+
+#[contractevent(topics = ["dequeue_withdrawal"], data_format = "single-value")]
+struct DequeueWithdrawal {
+    #[topic]
+    pool_address: Address,
+    #[topic]
+    from: Address,
+    amount: i128,
+}
+
+#[contractevent(topics = ["withdraw"], data_format = "vec")]
+struct Withdraw {
+    #[topic]
+    pool_address: Address,
+    #[topic]
+    from: Address,
+    amount: i128,
+    tokens_out: i128,
+}
+
+#[contractevent(topics = ["distribute"], data_format = "single-value")]
+struct Distribute {
+    new_tokens_emitted: i128,
+}
+
+#[contractevent(topics = ["gulp_emissions"], data_format = "vec")]
+struct GulpEmissions {
+    #[topic]
+    pool_address: Address,
+    new_backstop_emissions: i128,
+    new_pool_emissions: i128,
+}
+
+#[contractevent(topics = ["rw_zone_add"], data_format = "vec")]
+struct RwZoneAdd {
+    to_add: Address,
+    to_remove: Option<Address>,
+}
+
+#[contractevent(topics = ["rw_zone_remove"], data_format = "single-value")]
+struct RwZoneRemove {
+    to_remove: Address,
+}
+
+#[contractevent(topics = ["claim"], data_format = "single-value")]
+struct Claim {
+    #[topic]
+    from: Address,
+    amount: i128,
+}
+
+#[contractevent(topics = ["draw"], data_format = "vec")]
+struct Draw {
+    #[topic]
+    pool_address: Address,
+    to: Address,
+    amount: i128,
+}
+
+#[contractevent(topics = ["donate"], data_format = "single-value")]
+struct Donate {
+    #[topic]
+    pool_address: Address,
+    #[topic]
+    from: Address,
+    amount: i128,
+}
 
 pub struct BackstopEvents {}
 
@@ -20,9 +107,13 @@ impl BackstopEvents {
         tokens_in: i128,
         backstop_shares_minted: i128,
     ) {
-        let topics = (Symbol::new(e, "deposit"), pool_address, from);
-        e.events()
-            .publish(topics, (tokens_in, backstop_shares_minted));
+        Deposit {
+            pool_address,
+            from,
+            tokens_in,
+            backstop_shares_minted,
+        }
+        .publish(e);
     }
 
     /// Emitted when a withdrawal is queued
@@ -42,8 +133,13 @@ impl BackstopEvents {
         amount: i128,
         expiration: u64,
     ) {
-        let topics = (Symbol::new(e, "queue_withdrawal"), pool_address, from);
-        e.events().publish(topics, (amount, expiration));
+        QueueWithdrawal {
+            pool_address,
+            from,
+            amount,
+            expiration,
+        }
+        .publish(e);
     }
 
     /// Emitted when a withdrawal is dequeued
@@ -56,8 +152,12 @@ impl BackstopEvents {
     /// * `from` - The address of the user dequeuing the withdrawal
     /// * `amount` - The amount of shares being dequeued
     pub fn dequeue_withdrawal(e: &Env, pool_address: Address, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "dequeue_withdrawal"), pool_address, from);
-        e.events().publish(topics, amount);
+        DequeueWithdrawal {
+            pool_address,
+            from,
+            amount,
+        }
+        .publish(e);
     }
 
     /// Emitted when tokens are withdrawn from the backstop
@@ -71,8 +171,13 @@ impl BackstopEvents {
     /// * `amount` - The amount of backstop shares being burned
     /// * `tokens_out` - The amount of tokens being withdrawn
     pub fn withdraw(e: &Env, pool_address: Address, from: Address, amount: i128, tokens_out: i128) {
-        let topics = (Symbol::new(e, "withdraw"), pool_address, from);
-        e.events().publish(topics, (amount, tokens_out));
+        Withdraw {
+            pool_address,
+            from,
+            amount,
+            tokens_out,
+        }
+        .publish(e);
     }
 
     /// Emitted when new emissions are distributed
@@ -82,8 +187,7 @@ impl BackstopEvents {
     /// ### Arguments
     /// * `new_tokens_emitted` - The amount of new tokens emitted
     pub fn distribute(e: &Env, new_tokens_emitted: i128) {
-        let topics = (Symbol::new(e, "distribute"),);
-        e.events().publish(topics, new_tokens_emitted);
+        Distribute { new_tokens_emitted }.publish(e);
     }
 
     /// Emitted when new emissions are gulped
@@ -101,9 +205,12 @@ impl BackstopEvents {
         new_backstop_emissions: i128,
         new_pool_emissions: i128,
     ) {
-        let topics = (Symbol::new(e, "gulp_emissions"), pool_address);
-        e.events()
-            .publish(topics, (new_backstop_emissions, new_pool_emissions));
+        GulpEmissions {
+            pool_address,
+            new_backstop_emissions,
+            new_pool_emissions,
+        }
+        .publish(e);
     }
 
     /// Emitted when the reward zone is updated
@@ -115,8 +222,7 @@ impl BackstopEvents {
     /// * `to_add` - The address to add to the reward zone
     /// * `to_remove` - The address to remove from the reward zone
     pub fn rw_zone_add(e: &Env, to_add: Address, to_remove: Option<Address>) {
-        let topics = (Symbol::new(e, "rw_zone_add"),);
-        e.events().publish(topics, (to_add, to_remove));
+        RwZoneAdd { to_add, to_remove }.publish(e);
     }
 
     /// Emitted when a pool is removed from the reward zone
@@ -127,8 +233,7 @@ impl BackstopEvents {
     /// ### Arguments
     /// * `to_remove` - The address to remove from the reward zone
     pub fn rw_zone_remove(e: &Env, to_remove: Address) {
-        let topics = (Symbol::new(e, "rw_zone_remove"),);
-        e.events().publish(topics, to_remove);
+        RwZoneRemove { to_remove }.publish(e);
     }
 
     /// Emitted when emissions are claimed
@@ -140,8 +245,7 @@ impl BackstopEvents {
     /// * `from` - The address of the user claiming emissions
     /// * `amount` - The amount of LP tokens minted
     pub fn claim(e: &Env, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "claim"), from);
-        e.events().publish(topics, amount);
+        Claim { from, amount }.publish(e);
     }
 
     /// Emitted when tokens are drawn from the backstop
@@ -154,8 +258,12 @@ impl BackstopEvents {
     /// * `to` - The address receiving the drawn tokens
     /// * `amount` - The amount of tokens drawn
     pub fn draw(e: &Env, pool_address: Address, to: Address, amount: i128) {
-        let topics = (Symbol::new(e, "draw"), pool_address);
-        e.events().publish(topics, (to, amount));
+        Draw {
+            pool_address,
+            to,
+            amount,
+        }
+        .publish(e);
     }
 
     /// Emitted when tokens are donated to the backstop
@@ -168,7 +276,11 @@ impl BackstopEvents {
     /// * `from` - The address of the donor
     /// * `amount` - The amount of tokens donated
     pub fn donate(e: &Env, pool_address: Address, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "donate"), pool_address, from);
-        e.events().publish(topics, amount);
+        Donate {
+            pool_address,
+            from,
+            amount,
+        }
+        .publish(e);
     }
 }

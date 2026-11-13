@@ -1,7 +1,5 @@
 #![cfg(test)]
 
-use std::i64;
-
 use pool::{PoolClient, Request, RequestType, ReserveConfig};
 use sep_41_token::testutils::MockTokenClient;
 use soroban_fixed_point_math::SorobanFixedPoint;
