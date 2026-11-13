@@ -38,7 +38,7 @@ pub fn verify_contract_result<T>(env: &soroban_sdk::Env, r: &ContractResult<T>) 
                 let msg = "contract failed with InvalidAction - unexpected panic?";
                 eprintln!("{msg}");
                 eprintln!("recent events (10):");
-                for (i, event) in env.events().all().iter().rev().take(10).enumerate() {
+                for (i, event) in env.events().all().events().iter().rev().take(10).enumerate() {
                     eprintln!("{i}: {event:?}");
                 }
                 panic!("{msg}");
@@ -56,11 +56,17 @@ pub enum PoolReserveToken {
     STABLE = 4,
 }
 
+/// Upper bound for a single time jump (one year). Unbounded jumps saturate the
+/// ledger timestamp at `u64::MAX`, where the pool's 24 hour price age check
+/// overflows. No real ledger clock gets there.
+const MAX_TIME_JUMP: u64 = 365 * 24 * 60 * 60;
+
 /// Jump the Env `timestamp` forward by `amount` seconds.
 ///
 /// Does not change the `sequence` to prevent any ledger expirations.
 #[derive(Arbitrary, Debug)]
 pub struct PassTime {
+    #[arbitrary(with = |u: &mut Unstructured| u.int_in_range(0..=MAX_TIME_JUMP))]
     pub amount: u64,
 }
 
@@ -68,6 +74,7 @@ pub struct PassTime {
 /// `sequence` by `amount` / 5 blocks.
 #[derive(Arbitrary, Debug)]
 pub struct PassTimeAndBlocks {
+    #[arbitrary(with = |u: &mut Unstructured| u.int_in_range(0..=MAX_TIME_JUMP))]
     pub amount: u64,
 }
 
@@ -107,15 +114,30 @@ pub struct ClaimPool {}
 #[derive(Arbitrary, Debug)]
 pub struct ClaimBackstop {}
 
+/// Re-stamp the oracle prices at the current ledger timestamp. The pool rejects
+/// prices older than 24 hours, so this runs after every time jump, as the
+/// integration tests do.
+fn refresh_prices(fixture: &TestFixture) {
+    fixture.oracle.set_price_stable(&vec![
+        &fixture.env,
+        2000_0000000, // eth
+        1_0000000,    // usdc
+        0_1000000,    // xlm
+        1_0000000,    // stable
+    ]);
+}
+
 impl PassTime {
     pub fn run(&self, fixture: &TestFixture) {
         fixture.jump(self.amount);
+        refresh_prices(fixture);
     }
 }
 
 impl PassTimeAndBlocks {
     pub fn run(&self, fixture: &TestFixture) {
         fixture.jump_with_sequence(self.amount);
+        refresh_prices(fixture);
     }
 }
 
@@ -245,7 +267,7 @@ impl ClaimBackstop {
         let r = fixture.backstop.try_claim(
             &user,
             &vec![&fixture.env, pool_fixture.pool.address.clone()],
-            &user,
+            &0,
         );
         verify_contract_result(&fixture.env, &r);
     }
