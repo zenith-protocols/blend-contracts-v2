@@ -10,4 +10,8 @@ pub use pool::PoolClient;
 #[cfg(test)]
 pub use comet::WASM as COMET_WASM;
 
-pub use blend_contract_sdk::emitter::Client as EmitterClient;
+mod emitter;
+pub use emitter::Client as EmitterClient;
+
+#[cfg(test)]
+pub use emitter::WASM as EmitterWASM;

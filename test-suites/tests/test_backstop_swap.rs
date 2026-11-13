@@ -1,7 +1,6 @@
 #![cfg(test)]
 
 use backstop::BackstopClient;
-use blend_contract_sdk::{backstop as v1_backstop, emitter};
 use pool::{PoolClient, Request, RequestType, ReserveEmissionMetadata};
 use pool_factory::{PoolFactoryClient, PoolInitMeta};
 use sep_40_oracle::testutils::Asset;
@@ -15,7 +14,8 @@ use soroban_sdk::{
 };
 use test_suites::{
     assertions::{assert_approx_eq_abs, assert_approx_eq_rel},
-    backstop::create_backstop,
+    backstop::{backstop_v1 as v1_backstop, create_backstop},
+    emitter::EmitterClient,
     liquidity_pool::LPClient,
     oracle::create_mock_oracle,
     pool::{default_reserve_metadata, POOL_WASM},
@@ -44,7 +44,7 @@ fn test_v1_to_v2_backstop_swap() {
     let blnd_client = MockTokenClient::new(&env, &blnd);
     let usdc_client = MockTokenClient::new(&env, &usdc);
     let backstop_token_client = LPClient::new(&env, &backstop_token);
-    let emitter_client = emitter::Client::new(&env, &emitter);
+    let emitter_client = EmitterClient::new(&env, &emitter);
     let v1_backstop_client = v1_backstop::Client::new(&env, &v1_backstop);
     let v1_pool_client = PoolClient::new(&env, &v1_pool);
 
@@ -385,7 +385,7 @@ fn test_v1_to_v2_backstop_swap_past_max_emissions() {
     let blnd_client = MockTokenClient::new(&env, &blnd);
     let usdc_client = MockTokenClient::new(&env, &usdc);
     let backstop_token_client = LPClient::new(&env, &backstop_token);
-    let emitter_client = emitter::Client::new(&env, &emitter);
+    let emitter_client = EmitterClient::new(&env, &emitter);
     let v1_backstop_client = v1_backstop::Client::new(&env, &v1_backstop);
     let v1_pool_client = PoolClient::new(&env, &v1_pool);
 
