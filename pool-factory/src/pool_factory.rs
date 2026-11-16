@@ -4,8 +4,8 @@ use crate::{
     storage::{self, PoolInitMeta},
 };
 use soroban_sdk::{
-    contract, contractclient, contractimpl, panic_with_error, Address, Bytes, BytesN, Env, IntoVal,
-    String,
+    contract, contractclient, contractimpl, panic_with_error, Address, Bytes, BytesN,
+    ContractExecutable, Env, IntoVal, String,
 };
 
 const SCALAR_7: u32 = 1_0000000;
@@ -95,19 +95,22 @@ impl PoolFactory for PoolFactoryContract {
         salt_as_bytes.extend_from_array(&as_u8s);
         let new_salt = e.crypto().keccak256(&salt_as_bytes);
 
-        let pool_address = e.deployer().with_current_contract(new_salt).deploy_v2(
-            pool_init_meta.pool_hash,
-            (
-                admin,
-                name,
-                oracle,
-                backstop_take_rate,
-                max_positions,
-                min_collateral,
-                pool_init_meta.backstop,
-                pool_init_meta.blnd_id,
-            ),
-        );
+        let pool_address = e
+            .deployer()
+            .with_current_contract(new_salt)
+            .deploy_contract(
+                ContractExecutable::Wasm(pool_init_meta.pool_hash),
+                (
+                    admin,
+                    name,
+                    oracle,
+                    backstop_take_rate,
+                    max_positions,
+                    min_collateral,
+                    pool_init_meta.backstop,
+                    pool_init_meta.blnd_id,
+                ),
+            );
 
         storage::set_deployed(&e, &pool_address);
 

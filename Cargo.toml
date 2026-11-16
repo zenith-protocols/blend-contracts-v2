@@ -26,24 +26,23 @@ codegen-units = 1
 lto = true
 
 [workspace.dependencies.soroban-sdk]
-version = "22.0.7"
+version = "28.0.0"
 
+# script3 helper crates: the crates.io releases top out at soroban-sdk 25, so these are
+# pinned to Zenith forks of upstream's `p26` branches with soroban-sdk set to 28.
+# Retire the forks once script3 publishes protocol-28 releases.
 [workspace.dependencies.soroban-fixed-point-math]
-version = "1.3.0"
+git = "https://github.com/zenith-protocols/soroban-fixed-point-math"
+rev = "f54aa2f"
 
 [workspace.dependencies.cast]
 version = "0.3.0"
 default-features = false
 
 [workspace.dependencies.sep-40-oracle]
-version = "1.2.0"
+git = "https://github.com/zenith-protocols/sep-40-oracle"
+rev = "f457856"
 
 [workspace.dependencies.sep-41-token]
-version = "1.2.0"
-
-[workspace.dependencies.blend-contract-sdk]
-version = "1.22.0"
-
-[workspace.dependencies.moderc3156]
-git = "https://github.com/xycloo/xycloans"
-rev = "d9a7ae1"
+git = "https://github.com/zenith-protocols/sep-41-token"
+rev = "6a5be76"

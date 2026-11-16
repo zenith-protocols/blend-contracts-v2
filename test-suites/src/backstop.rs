@@ -1,9 +1,14 @@
 use soroban_sdk::{Address, Env, Vec};
 
 mod backstop_contract_wasm {
-    soroban_sdk::contractimport!(file = "../target/wasm32-unknown-unknown/optimized/backstop.wasm");
+    soroban_sdk::contractimport!(file = "../target/wasm32v1-none/optimized/backstop.wasm");
 }
 use backstop::{BackstopClient, BackstopContract};
+
+/// The v1 Backstop contract, used to test the v1 -> v2 backstop swap.
+pub mod backstop_v1 {
+    soroban_sdk::contractimport!(file = "../backstop_v1.wasm");
+}
 
 pub fn create_backstop<'a>(
     e: &Env,

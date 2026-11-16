@@ -2,13 +2,33 @@
 
 use soroban_sdk::{
     testutils::{Address as _, BytesN as _, Events},
-    vec, Address, BytesN, Env, IntoVal, String, Symbol,
+    vec,
+    xdr::{ContractEventBody, ScAddress, ScVal},
+    Address, BytesN, Env, IntoVal, String, Symbol, TryFromVal, Val, Vec,
 };
 
 use crate::{PoolFactoryClient, PoolFactoryContract, PoolInitMeta};
 
 mod pool {
-    soroban_sdk::contractimport!(file = "../target/wasm32-unknown-unknown/optimized/pool.wasm");
+    soroban_sdk::contractimport!(file = "../target/wasm32v1-none/optimized/pool.wasm");
+}
+
+/// Return the last contract event published as a `(contract, topics, data)` tuple.
+fn last_event(e: &Env) -> (Address, Vec<Val>, Val) {
+    let all = e.events().all();
+    let event = all.events().last().expect("no events published");
+    let contract_id = event
+        .contract_id
+        .clone()
+        .expect("event without contract id");
+    let contract =
+        Address::try_from_val(e, &ScVal::Address(ScAddress::Contract(contract_id))).unwrap();
+    let ContractEventBody::V0(body) = &event.body;
+    let mut topics = Vec::new(e);
+    for topic in body.topics.iter() {
+        topics.push_back(Val::try_from_val(e, topic).unwrap());
+    }
+    (contract, topics, Val::try_from_val(e, &body.data).unwrap())
 }
 
 #[test]
@@ -50,7 +70,7 @@ fn test_pool_factory() {
         &min_collateral,
     );
 
-    let event = vec![&e, e.events().all().last_unchecked()];
+    let event = vec![&e, last_event(&e)];
     assert_eq!(
         event,
         vec![

@@ -6,10 +6,14 @@ use crate::{
     storage::{self, ReserveConfig, ReserveData},
     PoolContract,
 };
-use blend_contract_sdk::emitter::{Client as EmitterClient, WASM as EmitterWASM};
 use sep_40_oracle::testutils::{MockPriceOracleClient, MockPriceOracleWASM};
 use sep_41_token::testutils::{MockTokenClient, MockTokenWASM};
 use soroban_fixed_point_math::SorobanFixedPoint;
+
+mod emitter {
+    soroban_sdk::contractimport!(file = "../emitter_v1.wasm");
+}
+use emitter::{Client as EmitterClient, WASM as EmitterWASM};
 use soroban_sdk::{testutils::Address as _, vec, Address, BytesN, Env, IntoVal, String};
 
 use backstop::{BackstopClient, BackstopContract};
