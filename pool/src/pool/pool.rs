@@ -112,21 +112,23 @@ impl Pool {
     /// Load a price from the Pool's oracle. Returns a cached version if one already exists.
     ///
     /// ### Arguments
-    /// * asset - The address of the underlying asset
+    /// * reserve - The reserve to load the price for
     ///
     /// ### Panics
-    /// If the price is invalid due to being over a day old or being less than or equal to 0
-    pub fn load_price(&mut self, e: &Env, asset: &Address) -> i128 {
-        if let Some(price) = self.prices.get(asset.clone()) {
+    /// If the price is invalid due to being older than the reserve's `max_price_age`
+    /// or being less than or equal to 0
+    pub fn load_price(&mut self, e: &Env, reserve: &Reserve) -> i128 {
+        if let Some(price) = self.prices.get(reserve.asset.clone()) {
             return price;
         }
         let oracle_client = PriceFeedClient::new(e, &self.config.oracle);
-        let oracle_asset = Asset::Stellar(asset.clone());
+        let oracle_asset = Asset::Stellar(reserve.asset.clone());
         let price_data = oracle_client.lastprice(&oracle_asset).unwrap_optimized();
-        if price_data.timestamp + 24 * 60 * 60 < e.ledger().timestamp() || price_data.price <= 0 {
+        let price_age = e.ledger().timestamp().saturating_sub(price_data.timestamp);
+        if price_age > reserve.config.max_price_age || price_data.price <= 0 {
             panic_with_error!(e, PoolError::InvalidPrice);
         }
-        self.prices.set(asset.clone(), price_data.price);
+        self.prices.set(reserve.asset.clone(), price_data.price);
         price_data.price
     }
 }
@@ -624,19 +626,23 @@ mod tests {
             status: 0,
             max_positions: 2,
         };
+        let mut reserve_0 = testutils::default_reserve(&e);
+        reserve_0.asset = asset_0.clone();
+        let mut reserve_1 = testutils::default_reserve(&e);
+        reserve_1.asset = asset_1.clone();
         e.as_contract(&pool, || {
             storage::set_pool_config(&e, &pool_config);
             let mut pool = Pool::load(&e);
 
-            let price = pool.load_price(&e, &asset_0);
+            let price = pool.load_price(&e, &reserve_0);
             assert_eq!(price, 123);
 
-            let price = pool.load_price(&e, &asset_1);
+            let price = pool.load_price(&e, &reserve_1);
             assert_eq!(price, 456);
 
             // verify the price is cached
             oracle_client.set_price_stable(&vec![&e, 789, 101112]);
-            let price = pool.load_price(&e, &asset_0);
+            let price = pool.load_price(&e, &reserve_0);
             assert_eq!(price, 123);
         });
     }
@@ -677,11 +683,13 @@ mod tests {
             status: 0,
             max_positions: 2,
         };
+        let mut reserve = testutils::default_reserve(&e);
+        reserve.asset = asset.clone();
         e.as_contract(&pool, || {
             storage::set_pool_config(&e, &pool_config);
             let mut pool = Pool::load(&e);
 
-            pool.load_price(&e, &asset);
+            pool.load_price(&e, &reserve);
             assert!(false);
         });
     }
@@ -722,11 +730,110 @@ mod tests {
             status: 0,
             max_positions: 2,
         };
+        let mut reserve = testutils::default_reserve(&e);
+        reserve.asset = asset.clone();
         e.as_contract(&pool, || {
             storage::set_pool_config(&e, &pool_config);
             let mut pool = Pool::load(&e);
 
-            pool.load_price(&e, &asset);
+            pool.load_price(&e, &reserve);
+            assert!(false);
+        });
+    }
+
+    #[test]
+    fn test_load_price_allows_age_up_to_reserve_max() {
+        let e = Env::default();
+        e.mock_all_auths_allowing_non_root_auth();
+
+        // price is exactly 3 days old
+        e.ledger().set(LedgerInfo {
+            timestamp: 1200 + 3 * 24 * 60 * 60,
+            protocol_version: 28,
+            sequence_number: 1234,
+            network_id: Default::default(),
+            base_reserve: 10,
+            min_temp_entry_ttl: 10,
+            min_persistent_entry_ttl: 10,
+            max_entry_ttl: 3110400,
+        });
+
+        let bombadil = Address::generate(&e);
+        let pool = testutils::create_pool(&e);
+        let asset = Address::generate(&e);
+        let (oracle, oracle_client) = testutils::create_mock_oracle(&e);
+        oracle_client.set_data(
+            &bombadil,
+            &Asset::Other(Symbol::new(&e, "USD")),
+            &vec![&e, Asset::Stellar(asset.clone())],
+            &7,
+            &300,
+        );
+        oracle_client.set_price(&vec![&e, 123], &1200);
+        let pool_config = PoolConfig {
+            oracle,
+            min_collateral: 1_0000000,
+            bstop_rate: 0_2000000,
+            status: 0,
+            max_positions: 2,
+        };
+        let mut reserve = testutils::default_reserve(&e);
+        reserve.asset = asset.clone();
+        reserve.config.max_price_age = 3 * 24 * 60 * 60;
+        e.as_contract(&pool, || {
+            storage::set_pool_config(&e, &pool_config);
+            let mut pool = Pool::load(&e);
+
+            let price = pool.load_price(&e, &reserve);
+            assert_eq!(price, 123);
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #1210)")]
+    fn test_load_price_panics_if_older_than_reserve_max() {
+        let e = Env::default();
+        e.mock_all_auths_allowing_non_root_auth();
+
+        // price is 1 hour and 1 second old
+        e.ledger().set(LedgerInfo {
+            timestamp: 1200 + 60 * 60 + 1,
+            protocol_version: 28,
+            sequence_number: 1234,
+            network_id: Default::default(),
+            base_reserve: 10,
+            min_temp_entry_ttl: 10,
+            min_persistent_entry_ttl: 10,
+            max_entry_ttl: 3110400,
+        });
+
+        let bombadil = Address::generate(&e);
+        let pool = testutils::create_pool(&e);
+        let asset = Address::generate(&e);
+        let (oracle, oracle_client) = testutils::create_mock_oracle(&e);
+        oracle_client.set_data(
+            &bombadil,
+            &Asset::Other(Symbol::new(&e, "USD")),
+            &vec![&e, Asset::Stellar(asset.clone())],
+            &7,
+            &300,
+        );
+        oracle_client.set_price(&vec![&e, 123], &1200);
+        let pool_config = PoolConfig {
+            oracle,
+            min_collateral: 1_0000000,
+            bstop_rate: 0_2000000,
+            status: 0,
+            max_positions: 2,
+        };
+        let mut reserve = testutils::default_reserve(&e);
+        reserve.asset = asset.clone();
+        reserve.config.max_price_age = 60 * 60;
+        e.as_contract(&pool, || {
+            storage::set_pool_config(&e, &pool_config);
+            let mut pool = Pool::load(&e);
+
+            pool.load_price(&e, &reserve);
             assert!(false);
         });
     }

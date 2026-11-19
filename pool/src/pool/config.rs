@@ -159,6 +159,7 @@ fn initialize_reserve(e: &Env, asset: &Address, config: &ReserveConfig) -> u32 {
         r_three: config.r_three,
         reactivity: config.reactivity,
         supply_cap: config.supply_cap,
+        max_price_age: config.max_price_age,
         enabled: config.enabled,
     };
     storage::set_res_config(e, asset, &reserve_config);
@@ -178,6 +179,7 @@ fn require_valid_reserve_metadata(e: &Env, metadata: &ReserveConfig) {
         || metadata.r_base < 0_0001000
         || (metadata.r_one > metadata.r_two || metadata.r_two > metadata.r_three)
         || (metadata.reactivity > 0_0001000)
+        || metadata.max_price_age == 0
     {
         panic_with_error!(e, PoolError::InvalidReserveMetadata);
     }
@@ -510,6 +512,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -561,6 +564,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -615,6 +619,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -658,6 +663,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -695,6 +701,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -710,6 +717,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -765,6 +773,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -780,6 +789,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -819,6 +829,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -834,6 +845,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -872,6 +884,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -912,6 +925,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -961,6 +975,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -1171,6 +1186,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 105,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
 
@@ -1219,6 +1235,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -1259,6 +1276,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1284,6 +1302,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1307,6 +1326,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1330,6 +1350,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1353,6 +1374,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1376,6 +1398,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1399,6 +1422,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1422,6 +1446,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1445,6 +1470,7 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1468,6 +1494,31 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 0_0001001,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
+            enabled: true,
+        };
+        require_valid_reserve_metadata(&e, &metadata);
+    }
+
+    #[test]
+    #[should_panic(expected = "Error(Contract, #1202)")]
+    fn test_validate_reserve_metadata_validates_max_price_age() {
+        let e = Env::default();
+
+        let metadata = ReserveConfig {
+            index: 0,
+            decimals: 18,
+            c_factor: 0_7500000,
+            l_factor: 0_7500000,
+            util: 0_5000000,
+            max_util: 0_9500000,
+            r_base: 0_0100000,
+            r_one: 0_0500000,
+            r_two: 0_5000000,
+            r_three: 1_5000000,
+            reactivity: 0_0000020,
+            supply_cap: 1000000000000000000,
+            max_price_age: 0,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);

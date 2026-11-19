@@ -39,7 +39,7 @@ impl PositionData {
                 continue;
             }
             let reserve = pool.load_reserve(e, &reserve_list.get_unchecked(i), false);
-            let asset_to_base = pool.load_price(e, &reserve.asset);
+            let asset_to_base = pool.load_price(e, &reserve);
 
             if b_token_balance > 0 {
                 // append users effective collateral to collateral_base

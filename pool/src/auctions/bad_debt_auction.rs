@@ -52,7 +52,7 @@ pub fn create_bad_debt_auction_data(
             .get(reserve.config.index)
             .unwrap_or(0);
         if liability_balance > 0 {
-            let asset_to_base = pool.load_price(e, &reserve.asset);
+            let asset_to_base = pool.load_price(e, &reserve);
             let asset_balance = reserve.to_asset_from_d_token(e, liability_balance);
             debt_value += i128(asset_to_base).fixed_mul_floor(e, &asset_balance, &reserve.scalar);
             auction_data.bid.set(reserve.asset, liability_balance);

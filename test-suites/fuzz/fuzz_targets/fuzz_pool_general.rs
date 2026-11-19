@@ -105,7 +105,7 @@ impl Asserts for TestFixture<'_> {
             for (token_index, reserve_index) in pool_fixture.reserves.iter() {
                 let asset = &self.tokens[token_index.clone()];
                 let reserve = pool_state.load_reserve(&self.env, &asset.address, false);
-                let asset_to_base = pool_state.load_price(&self.env, &reserve.asset);
+                let asset_to_base = pool_state.load_price(&self.env, &reserve);
                 supply += asset_to_base
                     .fixed_mul_floor(
                         reserve.total_supply(&self.env) + reserve.data.backstop_credit,

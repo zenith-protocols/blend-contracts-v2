@@ -219,6 +219,7 @@ pub(crate) fn default_reserve(e: &Env) -> Reserve {
             reactivity: 0_0000020, // 2e-6
             index: 0,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         },
         data: ReserveData {
@@ -249,6 +250,7 @@ pub(crate) fn default_reserve_meta() -> (ReserveConfig, ReserveData) {
             reactivity: 0_0000020, // 2e-6
             index: 0,
             supply_cap: 1000000000000000000,
+            max_price_age: 24 * 60 * 60,
             enabled: true,
         },
         ReserveData {

@@ -45,7 +45,7 @@ pub fn create_interest_auction_data(
         // `load_reserve` will panic if the reserve does not exist
         let reserve = pool.load_reserve(e, &lot_asset, false);
         if reserve.data.backstop_credit > 0 {
-            let asset_to_base = pool.load_price(e, &reserve.asset);
+            let asset_to_base = pool.load_price(e, &reserve);
             interest_value += i128(asset_to_base).fixed_mul_floor(
                 e,
                 &reserve.data.backstop_credit,
